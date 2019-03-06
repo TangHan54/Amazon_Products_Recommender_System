@@ -8,4 +8,6 @@ Data Source: [Amazon product data](http://jmcauley.ucsd.edu/data/amazon/)
 > workon spark_project
 > pip install -r requirements.txt
 
-2. 
+2. unzip files
+> python init/gunzip_file.py
+

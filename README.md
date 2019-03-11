@@ -21,3 +21,7 @@ Data processing includes
 - remove products which received less than n reviews.
 
 > python manage.py
+
+or
+
+> spark-subbmit manage.py --executor-cores 4

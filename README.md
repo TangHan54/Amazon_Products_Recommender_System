@@ -12,4 +12,12 @@ Data should be in the folder data.
 > pip install -r requirements.txt
 
 2. Process data
+
+Data processing includes 
+
+- combine multiple files
+- remove duplicates
+- remove users who posted less than n reviews, default 5.  
+- remove products which received less than n reviews.
+
 > python manage.py

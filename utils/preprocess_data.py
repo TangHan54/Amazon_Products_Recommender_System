@@ -57,8 +57,6 @@ def process_data(foldername, user_threshold=5, product_threshold=5):
 	product_df = product_df.filter(f"nb > {product_threshold}").select('asin')
 	df = df.join(product_df, 'asin', 'inner').withColumnRenamed('asin','productID')
 
-
-	df = remove_cases(df)
 	df_product_category = df.select(['productID','category']) 
 	df_rating = df.select(['reviewerID','productID','overall'])
 	return df_product_category, df_rating

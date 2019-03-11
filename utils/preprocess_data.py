@@ -25,7 +25,7 @@ def unzip_file(foldername):
 # Step 2. Extract the category from the fname
 # Step 3. Create a Dataframe of the format as (productid, category)
 
-def process_data(foldername):
+def process_data(foldername, user_threshold=5, product_threshold=5):
 	items = os.listdir(foldername)
 
 	M = 999
@@ -48,16 +48,15 @@ def process_data(foldername):
 	# shape of the dataframe
 	print((df.count(), len(df.columns)))
 
-	def remove_cases(df, user_threshold=5, product_threshold=5):
-		# Remove users who reviewed less than user_threshold
-		user_df = df.groupby(df.reviewerID).agg(count(df.reviewerID).alias('nb'))
-		user_df = user_df.filter(f"nb > {user_threshold}").select('reviewerID')
-		df = df.join(user_df,'reviewerID', 'inner')
-		# Remove products whose reviews are less than product_threshold
-		product_df = df.groupby(df.asin).agg(count(df.asin).alias('nb'))
-		product_df = product_df.filter(f"nb > {product_threshold}").select('asin')
-		df = df.join(product_df, 'asin', 'inner').withColumnRename('asin','productID')
-		return df
+	# Remove users who reviewed less than user_threshold
+	user_df = df.groupby(df.reviewerID).agg(count(df.reviewerID).alias('nb'))
+	user_df = user_df.filter(f"nb > {user_threshold}").select('reviewerID')
+	df = df.join(user_df,'reviewerID', 'inner')
+	# Remove products whose reviews are less than product_threshold
+	product_df = df.groupby(df.asin).agg(count(df.asin).alias('nb'))
+	product_df = product_df.filter(f"nb > {product_threshold}").select('asin')
+	df = df.join(product_df, 'asin', 'inner').withColumnRenamed('asin','productID')
+
 
 	df = remove_cases(df)
 	df_product_category = df.select(['productID','category']) 

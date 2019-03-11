@@ -24,4 +24,4 @@ Data processing includes
 
 or
 
-> spark-subbmit manage.py --executor-cores 4
+> spark-subbmit manage.py --master local[8]

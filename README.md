@@ -9,7 +9,7 @@ Data should be in the folder data.
 1. Create a virtual environment
 > mkvirtualenv spark \
 > workon spark \
-> pip install -r requirements.txt \
+> pip install -r requirements.txt 
 
 2. Process data
 

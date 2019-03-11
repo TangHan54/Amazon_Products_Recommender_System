@@ -7,9 +7,9 @@ Data should be in the folder data.
 - Raw data should be in the form '.json.gz' or '.json'
 
 1. Create a virtual environment
-> mkvirtualenv spark
-> workon spark
-> pip install -r requirements.txt
+> mkvirtualenv spark \
+> workon spark \
+> pip install -r requirements.txt \
 
 2. Process data
 

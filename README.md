@@ -24,4 +24,4 @@ Data processing includes
 
 or
 
-> spark-subbmit manage.py --master local[8]
+> spark-submit manage.py --master "local[8]"

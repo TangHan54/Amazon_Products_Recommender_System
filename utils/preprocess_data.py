@@ -30,11 +30,11 @@ def process_data(spark, foldername, user_threshold=5, product_threshold=5):
 			# add category as a column in the dataframe
 			if idx < M:
 				df = spark.read.json(elem)
-				df = df.withColumn('category', lit(category))
+				df = df.withColumn('category', lit(category)).select('asin','reviewerID','overall','category')
 				M = idx
 			else:
 				temp_df = spark.read.json(elem)
-				temp_df = temp_df.withColumn('category', lit(category))
+				temp_df = temp_df.withColumn('category', lit(category)).select('asin','reviewerID','overall','category')
 				df = df.unionAll(temp_df)
 
 	# drop duplicates

@@ -1,4 +1,5 @@
 import logging
+import os
 from utils import preprocess_data
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import StringIndexer, IndexToString
@@ -9,7 +10,7 @@ from pyspark.sql.functions import array, col, lit, struct
 from pyspark.sql import SparkSession
 
 logger = logging.getLogger(__name__)
-
+fpath = os.path.abspath('')
 spark = SparkSession \
         .builder \
         .appName("Amazon Recommender System") \
@@ -18,6 +19,7 @@ spark = SparkSession \
         .config("spark.executor.memory", "4g") \
         .config("spark.master", "local[4]") \
         .getOrCreate()
+
 
 def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user', number_of_recommendations=10):
     """
@@ -61,12 +63,16 @@ def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user',
     cv = CrossValidator(estimator=als, estimatorParamMaps=param_grid, evaluator=evaluator, numFolds=3)
     # train the model for testing
     model = cv.fit(train)
+    model_path = fpath + "/model_test"
+    model.bestModel.write().overwrite().save(model_path)
     predictions = model.transform(test)
     rmse = evaluator.evaluate(predictions)
     print('The test RMSE is', round(rmse, 4))
     
     # train the model with complete dataset
     model = cv.fit(df)
+    model_path = fpath + "/model_prod"
+    model.bestModel.write().overwrite().save(model_path)
 
     n = number_of_recommendations
     if recommend_for == 'user':

@@ -4,12 +4,6 @@ from pyspark.sql.functions import lit, count
 import json
 import os 
 
-spark = SparkSession.builder \
-    .master("local") \
-    .appName("Amazon Recommender System") \
-    .config(conf=SparkConf()) \
-    .getOrCreate() \
-
 
 # The raw data is in .gz format
 # Step 1. unzip the file
@@ -25,7 +19,7 @@ def unzip_file(foldername):
 # Step 2. Extract the category from the fname
 # Step 3. Create a Dataframe of the format as (productid, category)
 
-def process_data(foldername, user_threshold=5, product_threshold=5):
+def process_data(spark, foldername, user_threshold=5, product_threshold=5):
 	items = os.listdir(foldername)
 
 	M = 999

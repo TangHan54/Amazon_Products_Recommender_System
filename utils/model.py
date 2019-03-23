@@ -15,8 +15,8 @@ spark = SparkSession \
         .appName("Amazon Recommender System") \
         .config("spark.driver.maxResultSize", "4g") \
         .config("spark.driver.memory", "4g") \
-        .config("spark.executor.memory", "1g") \
-        .config("spark.master", "local[2]") \
+        .config("spark.executor.memory", "4g") \
+        .config("spark.master", "local[4]") \
         .getOrCreate()
 
 def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user', number_of_recommendations=10):

@@ -2,8 +2,8 @@ import logging
 import os
 from utils import preprocess_data
 from pyspark.ml import Pipeline
-from pyspark.ml.feature import StringIndexer, IndexToString
-from pyspark.ml.recommendation import ALS
+from pyspark.ml.feature import StringIndexer, IndexToString, StringIndexerModel
+from pyspark.ml.recommendation import ALS, ALSModel
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
 from pyspark.sql.functions import array, col, lit, struct
@@ -21,7 +21,7 @@ spark = SparkSession \
         .getOrCreate()
 
 
-def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user', number_of_recommendations=10):
+def train(foldername='data'):
     """
         input_id
         foldername: the folder that contains the data.
@@ -47,6 +47,8 @@ def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user',
     indexers = [StringIndexer(inputCol=col, outputCol=col+"_index").fit(df_rating) for col in df_rating.columns if col != 'overall']
     pipeline = Pipeline(stages=indexers)
     df_rating= pipeline.fit(df_rating).transform(df_rating)
+    [indexers[i].write().overwrite().save(fpath+'/index/'+str(i)) for i in range(len(indexers))]
+    
     # split into train and test 
     df = df_rating.select(['reviewerID_index','productID_index','overall'])
     (train, test) = df.randomSplit([0.8, 0.2], seed=0)
@@ -64,7 +66,8 @@ def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user',
     # train the model for testing
     model = cv.fit(train)
     model_path = fpath + "/model_test"
-    model.bestModel.write().overwrite().save(model_path)
+    model = model.bestModel
+    model.write().overwrite().save(model_path)
     predictions = model.transform(test)
     rmse = evaluator.evaluate(predictions)
     print('The test RMSE is', round(rmse, 4))
@@ -72,12 +75,16 @@ def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user',
     # train the model with complete dataset
     model = cv.fit(df)
     model_path = fpath + "/model_prod"
-    model.bestModel.write().overwrite().save(model_path)
+    model = model.bestModel
+    model.write().overwrite().save(model_path)
 
+def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommendations=10):
+    indexers = [StringIndexerModel.load(fpath+'/index/'+str(i)) for i in range(2)]
+    model = ALSModel.load(fpath+'/model_prod')
+    
     n = number_of_recommendations
     if recommend_for == 'user':
     # Generate top 10 product recommendations for each user
-        
         userRecs = model.recommendForAllUsers(n)
         converter = IndexToString(inputCol="reviewerID_index", outputCol="reviewerID", labels=indexers[0].labels)
         user_rec = converter.transform(userRecs)
@@ -91,10 +98,12 @@ def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user',
             ]
         )
         user_rec = user_rec.withColumn("recommendations", recommendations)
+        user_rec.write.csv(fpath+'/result/user_rec.csv')
         print('Recommendation Successful!')
         print(user_rec.show(5))
-        return user_rec.where(user_rec.reviewerID == input_id)\
-            .select("recommendations.productId", "recommendations.rating").collect()
+        if input_id:
+            return user_rec.where(user_rec.reviewerID == input_id)\
+                .select("recommendations.productId", "recommendations.rating").collect()
     else:
         # Generate top 10 user recommendations for each product
         productRecs = model.recommendForAllItems(10)
@@ -112,5 +121,7 @@ def recommend(input_id='AXBNEFRD90GLM', foldername='data', recommend_for='user',
         product_rec = product_rec.withColumn("recommendations", recommendations)
         print('Recommendation Successful!')
         print(product_rec.show(5))
-        return product_rec.where(product_rec.productID_index == input_id)\
-            .select("recommendations.userId", "recommendations.rating").collect()
+        product_rec.write.csv(fpath+'/result/product_rec.csv')
+        if input_id:
+            return product_rec.where(product_rec.productID_index == input_id)\
+                .select("recommendations.userId", "recommendations.rating").collect()

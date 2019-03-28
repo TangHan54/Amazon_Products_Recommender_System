@@ -30,11 +30,11 @@ def process_data(spark, foldername, user_threshold=5, product_threshold=5):
 			# add category as a column in the dataframe
 			if idx < M:
 				df = spark.read.json(elem)
-				df = df.withColumn('category', lit(category)).select('asin','reviewerID','overall','category')
+				df = df.withColumn('category', lit(category)).select('asin','reviewerID','overall','category','reviewText')
 				M = idx
 			else:
 				temp_df = spark.read.json(elem)
-				temp_df = temp_df.withColumn('category', lit(category)).select('asin','reviewerID','overall','category')
+				temp_df = temp_df.withColumn('category', lit(category)).select('asin','reviewerID','overall','category','reviewText')
 				df = df.unionAll(temp_df)
 
 	# drop duplicates
@@ -52,5 +52,5 @@ def process_data(spark, foldername, user_threshold=5, product_threshold=5):
 	df = df.join(product_df, 'asin', 'inner').withColumnRenamed('asin','productID')
 
 	df_product_category = df.select(['productID','category']) 
-	df_rating = df.select(['reviewerID','productID','overall'])
+	df_rating = df.select(['reviewerID','productID','overall','reviewText'])
 	return df_product_category, df_rating

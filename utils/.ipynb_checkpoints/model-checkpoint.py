@@ -102,14 +102,16 @@ def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommend
                 for i in range(n)
             ]
         )
-        user_rec = user_rec.withColumn("recommendations", recommendations)
-        user_rec.write.csv(fpath+'/result/user_rec.csv')
+        user_rec = user_rec.withColumn("recommendations", recommendations).select(['reviewerID','recommendations'])
+        user_rec.rdd.saveAsPickleFile(fpath+'/result/user_rec')
         print('Recommendation Successful!')
         print(user_rec.show(5))
         # user_rec.rdd.write().overwrite().saveAsPickleFile(fpath+'/recommendation/user_rec.pickle')
         if input_id:
-            return user_rec.where(user_rec.reviewerID == input_id)\
+            result = user_rec.where(user_rec.reviewerID == input_id)\
                 .select("recommendations.productId", "recommendations.rating").collect()
+            with open(fpath + f'result/{input_id}.pickle') as f:
+                f.dump(result,f)
     else:
         # Generate top 10 user recommendations for each product
         productRecs = model.recommendForAllItems(10)

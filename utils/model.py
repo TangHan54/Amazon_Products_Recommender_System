@@ -133,3 +133,6 @@ def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommend
         if input_id:
             return product_rec.where(product_rec.productID_index == input_id)\
                 .select("recommendations.userId", "recommendations.rating").collect()
+
+def recommendProductForUser():
+    sc = spark.sparkContect

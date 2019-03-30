@@ -81,7 +81,6 @@ def train(foldername='data'):
     
     
     # train the model with complete dataset
-<<<<<<< HEAD
     #     model = cv.fit(df)
     #     model_path = fpath + "/model_prod"
     #     model = model.bestModel
@@ -90,16 +89,6 @@ def train(foldername='data'):
 def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommendations=10):
     indexers = [StringIndexerModel.load(fpath+'/index/'+str(i)) for i in range(2)]
     model = ALSModel.load(fpath+'/model_test')
-=======
-    model = cv.fit(df)
-    model_path = fpath + "/model_prod"
-    model = model.bestModel
-    model.write().overwrite().save(model_path)
-
-def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommendations=10):
-    indexers = [StringIndexerModel.load(fpath+'/index/'+str(i)) for i in range(2)]
-    model = ALSModel.load(fpath+'/model_prod')
->>>>>>> 9254c7e6c8e5bd796f29eb6ac78a6036f9ea65e1
     
     n = number_of_recommendations
     if recommend_for == 'user':
@@ -120,10 +109,7 @@ def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommend
         user_rec.write.csv(fpath+'/result/user_rec.csv')
         print('Recommendation Successful!')
         print(user_rec.show(5))
-<<<<<<< HEAD
         # user_rec.rdd.write().overwrite().saveAsPickleFile(fpath+'/recommendation/user_rec.pickle')
-=======
->>>>>>> 9254c7e6c8e5bd796f29eb6ac78a6036f9ea65e1
         if input_id:
             return user_rec.where(user_rec.reviewerID == input_id)\
                 .select("recommendations.productId", "recommendations.rating").collect()
@@ -144,11 +130,7 @@ def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommend
         product_rec = product_rec.withColumn("recommendations", recommendations)
         print('Recommendation Successful!')
         print(product_rec.show(5))
-<<<<<<< HEAD
         # product_rec.rdd.saveAsPickleFile(fpath+'/recommendation/product_rec.pickle')
-=======
-        product_rec.write.csv(fpath+'/result/product_rec.csv')
->>>>>>> 9254c7e6c8e5bd796f29eb6ac78a6036f9ea65e1
         if input_id:
             return product_rec.where(product_rec.productID_index == input_id)\
                 .select("recommendations.userId", "recommendations.rating").collect()

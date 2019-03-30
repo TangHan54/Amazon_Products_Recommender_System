@@ -15,10 +15,10 @@ fpath = os.path.abspath('')
 spark = SparkSession \
         .builder \
         .appName("Amazon Recommender System") \
-        .config("spark.driver.maxResultSize", "96g") \
-        .config("spark.driver.memory", "96g") \
-        .config("spark.executor.memory", "96g") \
-        .config("spark.master", "local[12]") \
+        .config("spark.driver.maxResultSize", "64g") \
+        .config("spark.driver.memory", "64g") \
+        .config("spark.executor.memory", "16g") \
+        .config("spark.master", "local[10]") \
         .getOrCreate()
 
 
@@ -50,10 +50,7 @@ def train(foldername='data'):
     df_rating= pipeline.fit(df_rating).transform(df_rating)
     [indexers[i].write().overwrite().save(fpath+'/index/'+str(i)) for i in range(len(indexers))]
     
-<<<<<<< HEAD
-    
-=======
->>>>>>> 9254c7e6c8e5bd796f29eb6ac78a6036f9ea65e1
+
     # split into train and test 
     df = df_rating.select(['reviewerID_index','productID_index','overall'])
     (train, test) = df.randomSplit([0.8, 0.2], seed=0)

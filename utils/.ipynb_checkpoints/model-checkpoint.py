@@ -110,7 +110,7 @@ def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommend
         if input_id:
             result = user_rec.where(user_rec.reviewerID == input_id)\
                 .select("recommendations.productId", "recommendations.rating").collect()
-            with open(fpath + f'result/{input_id}.pickle') as f:
+            with open(fpath + f'/result/{input_id}.pickle') as f:
                 f.dump(result,f)
     else:
         # Generate top 10 user recommendations for each product

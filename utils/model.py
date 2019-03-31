@@ -139,9 +139,29 @@ def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommend
             return product_rec.where(product_rec.productID_index == input_id)\
                 .select("recommendations.userId", "recommendations.rating").collect()
 
-def recommendProductForUser():
+def recommendProductForUser(foldername='data'):
+        # Preprocess data
+    logger.warning('Started to unzip raw data.')
+    try:
+        preprocess_data.unzip_file(foldername)
+    except FileNotFoundError:
+        logger.warning('No raw files exists.')
+
+    logger.warning('Started to process data.')
+    try:
+        df_product_category, df_rating = preprocess_data.process_data(spark,foldername)
+    except FileNotFoundError:
+        logger.warning('No data exists.')
+
     sc = spark.sparkContext
-    user_rec = sc.pickleFile('/result/user_rec')
+    user_rec = sc.pickleFile(fpath + '/result/user_rec').toDF()
+    result = user_rec.select(user_rec['recommendations']).where(user_rec['reviewerID']=='A100L918633LUO')
+    distinct_categories = result.select(explode(result['recommendations']['productId']).alias('productId')) \
+        .join(df_product_category, 'productID') \
+        .groupBy('category').count()
+    return 
+
+
 
 def userCf():
     try:
@@ -200,7 +220,7 @@ def userCf():
             test_prediction.rdd.saveAsPickleFile(fpath+'result/usercf_result')
 
 
-    print(f'Best cluster size of {best_cluster_size} & best validation RMSE is', round(best_rmse, 4))
+    print(f'Best cluster size of {best_cluster_size} & best validation RMSE is %.2f' % best_rmse)
 
         
 

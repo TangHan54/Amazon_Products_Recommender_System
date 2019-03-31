@@ -1,6 +1,7 @@
 import pickle
 import logging
 import os
+import shutil
 from utils import preprocess_data
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import StringIndexer, IndexToString, StringIndexerModel
@@ -194,6 +195,8 @@ def userCf():
         if rmse < best_rmse:
             best_rmse = rmse
             best_cluster_size = cs
+            if os.path.isdir(fpath + "result/usercf_result"):
+                shutil.rmtree(fpath+'result/usercf_result')
             test_prediction.rdd.saveAsPickleFile(fpath+'result/usercf_result')
 
 

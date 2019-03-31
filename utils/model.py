@@ -7,8 +7,10 @@ from pyspark.ml.feature import StringIndexer, IndexToString, StringIndexerModel
 from pyspark.ml.recommendation import ALS, ALSModel
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
-from pyspark.sql.functions import array, col, lit, struct
+from pyspark.sql.functions import *
 from pyspark.sql import SparkSession
+from pyspark.ml.linalg import Vectors, VectorUDT
+from pyspark.ml.clustering import KMeans
 
 logger = logging.getLogger(__name__)
 fpath = os.path.abspath('')
@@ -54,6 +56,8 @@ def train(foldername='data'):
     # split into train and test 
     df = df_rating.select(['reviewerID_index','productID_index','overall'])
     (train, test) = df.randomSplit([0.8, 0.2], seed=0)
+    train.rdd.saveAsPickleFile(fpath+'/data/train')
+    test.rdd.saveAsPickleFile(fpath+'/data/test')
 
     als = ALS(userCol="reviewerID_index", itemCol="productID_index", ratingCol="overall", coldStartStrategy="drop")
     # Add hyperparameters and their respective values to param_grid
@@ -106,7 +110,7 @@ def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommend
         user_rec.rdd.saveAsPickleFile(fpath+'/result/user_rec')
         print('Recommendation Successful!')
         print(user_rec.show(5))
-        # user_rec.rdd.write().overwrite().saveAsPickleFile(fpath+'/recommendation/user_rec.pickle')
+        # user_rec.rdd.saveAsPickleFile(fpath+'/result/user_rec')
         if input_id:
             result = user_rec.where(user_rec.reviewerID == input_id)\
                 .select("recommendations.productId", "recommendations.rating").collect()
@@ -129,10 +133,72 @@ def recommend(input_id='AXBNEFRD90GLM',recommend_for='user', number_of_recommend
         product_rec = product_rec.withColumn("recommendations", recommendations)
         print('Recommendation Successful!')
         print(product_rec.show(5))
-        # product_rec.rdd.saveAsPickleFile(fpath+'/recommendation/product_rec.pickle')
+        # product_rec.rdd.saveAsPickleFile(fpath+'/result/product_rec')
         if input_id:
             return product_rec.where(product_rec.productID_index == input_id)\
                 .select("recommendations.userId", "recommendations.rating").collect()
 
 def recommendProductForUser():
-    sc = spark.sparkContect
+    sc = spark.sparkContext
+    user_rec = sc.pickleFile('/result/user_rec')
+
+def userCf():
+    try:
+        ALSmodel = ALSModel.load(fpath+'/model_test')
+    except FileNotFoundError:
+        logger.warning('Model instance does not exit.')
+
+    sc = spark.sparkContext
+    train = sc.pickleFile(fpath + '/data/train').toDF()
+    test = sc.pickleFile(fpath + '/data/test').toDF()
+
+    df_user_features = ALSmodel.userFactors
+    user_count = df_user_features.count()
+
+    to_vec = udf(lambda vs: Vectors.dense(vs), VectorUDT())
+ 
+    df_user_features = df_user_features.select(
+        df_user_features["id"].alias('reviewerID_index'), 
+        to_vec(df_user_features["features"]).alias("features")
+    )
+
+    # parameter setting: cluster sizes
+    cluster_sizes = [400, 600, 800, 1000, 1200, 1400]
+    best_cluster_size = None
+    best_rmse = float('inf')
+
+    for cs in cluster_sizes:
+        k_clusters = int(user_count / cs)
+        if k_clusters <= 1:
+            break
+        # Clustering model 
+        kmeans = KMeans().setK(k_clusters).setSeed(0)
+        user_similarity_model = kmeans.fit(df_user_features)
+        user_cl = user_similarity_model.transform(df_user_features)
+        # cluster mean as prediction
+        cluster_mean = user_cl.join(train, 'reviewerID_index') \
+            .groupBy(['prediction','productID_index']) \
+            .agg(mean('overall').alias('cluster_mean'))
+        # predict for the test
+        test_prediction = test.join(user_cl, 'reviewerID_index') \
+            .join(cluster_mean, ['prediction','productID_index']) \
+            .select(test['reviewerID_index'], test['productID_index'], test['overall'].alias('actual'), cluster_mean['cluster_mean'].alias('pred'))
+        
+        evaluator = RegressionEvaluator(metricName="rmse", labelCol="actual",
+                                predictionCol="pred")
+
+        rmse = evaluator.evaluate(test_prediction)
+        
+        print(f'Cluster size of {cs}: validation RMSE is %.2f' % rmse)
+        
+        if rmse < best_rmse:
+            best_rmse = rmse
+            best_cluster_size = cs
+            test_prediction.rdd.saveAsPickleFile(fpath+'result/usercf_result')
+
+
+    print(f'Best cluster size of {best_cluster_size} & best validation RMSE is', round(best_rmse, 4))
+
+        
+
+        

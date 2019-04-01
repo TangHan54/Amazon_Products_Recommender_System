@@ -13,10 +13,10 @@ fpath = os.path.abspath('')
 spark = SparkSession \
         .builder \
         .appName("Amazon Recommender System") \
-        .config("spark.driver.maxResultSize", "96g") \
-        .config("spark.driver.memory", "96g") \
-        .config("spark.executor.memory", "16g") \
-        .config("spark.master", "local[12]") \
+        .config("spark.driver.maxResultSize", "64g") \
+        .config("spark.driver.memory", "64g") \
+        .config("spark.executor.memory", "6g") \
+        .config("spark.master", "local[10]") \
         .getOrCreate()
 
 
@@ -59,5 +59,11 @@ def train(foldername='data'):
         psf.col("j.productID").alias("j"), 
         dot_udf("i.word_vec", "j.word_vec").alias("dot"))\
     .sort("i", "j")
-    
-
+    # recommend for a product
+    df_product = df_content.select('*').where(df_content['productID']=='B0000ATYTG')
+    df_result = df_product.alias("i").join(df_content.alias("j"), psf.col("i.productID") != psf.col("j.productID"))\
+    .select(
+        psf.col("i.productID").alias("i"), 
+        psf.col("j.productID").alias("j"), 
+        dot_udf("i.word_vec", "j.word_vec").alias("dot"))\
+    .sort("i", "j")

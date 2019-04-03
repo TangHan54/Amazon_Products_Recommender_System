@@ -13,8 +13,6 @@ fpath = os.path.abspath('')
 spark = SparkSession \
         .builder \
         .appName("Amazon Recommender System") \
-        .config("spark.driver.maxResultSize", "64g") \
-        .config("spark.driver.memory", "64g") \
         .config("spark.executor.memory", "6g") \
         .config("spark.master", "local[10]") \
         .getOrCreate()

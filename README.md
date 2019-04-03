@@ -25,3 +25,16 @@ Data processing includes
 or
 
 > spark-submit manage.py --master "local[8]"
+
+3. Build models
+
+Content-based model
+
+- Calculate the tfidf for reviewText
+- Calculate the pair-wise similarity
+- Recommend the top ones given a product based on similarity
+
+Collaborative Filtering
+
+- Matrix Factorization based on Explicit Rating
+- Given a user/product, recommend the top rating ones.

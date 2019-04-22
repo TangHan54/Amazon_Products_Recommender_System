@@ -20,12 +20,6 @@ Data processing includes
 - remove users who posted less than n reviews, default 5.  
 - remove products which received less than n reviews.
 
-> python manage.py
-
-or
-
-> spark-submit manage.py --master "local[8]"
-
 3. Build models
 
 Content-based model
@@ -38,3 +32,10 @@ Collaborative Filtering
 
 - Matrix Factorization based on Explicit Rating
 - Given a user/product, recommend the top rating ones.
+
+> spark-submit manage.py --master "local[8]"
+
+or
+> python manage.py
+
+
